@@ -15,9 +15,24 @@ const PORT = process.env.PORT || 3001;
 // Connect to MongoDB
 connectDB();
 
+
 // Middleware
+// Improved CORS: allow all localhost ports in development, or use CORS_ORIGINS in production
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',');
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    // Allow all localhost ports in development
+    if (/^http:\/\/localhost:\d+$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.error('Blocked by CORS. Incoming origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 

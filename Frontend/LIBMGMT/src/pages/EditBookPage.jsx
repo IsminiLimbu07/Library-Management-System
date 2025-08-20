@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-
+import { apiFetch } from '../lib/api';
 const EditBookPage = () => {
   const [formData, setFormData] = useState({
     title: '',

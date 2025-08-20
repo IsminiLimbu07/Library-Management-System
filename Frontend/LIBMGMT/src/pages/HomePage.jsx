@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
+import { apiFetch } from '../lib/api';
 const HomePage = () => {
   const { user } = useAuth();
 

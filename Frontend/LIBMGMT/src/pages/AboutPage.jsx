@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiFetch } from '../lib/api';
 
 const AboutPage = () => {
   return (

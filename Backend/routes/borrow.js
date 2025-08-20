@@ -1,15 +1,17 @@
-import express from 'express';
-import Book from '../models/Book.js';
-import Borrow from '../models/Borrow.js';
-import { authenticateToken, requireLibrarian } from '../middleware/auth.js';
+const express = require('express');
+const Borrow = require('../models/Borrow');
+const Book = require('../models/Book');
+const { protect, librarianOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Borrow a book
-router.post('/', authenticateToken, async (req, res) => {
+// @desc    Borrow a book
+// @route   POST /api/borrow
+// @access  Private (Borrower)
+const borrowBook = async (req, res) => {
   try {
     const { bookId } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     if (!bookId) {
       return res.status(400).json({ error: 'Book ID is required' });
@@ -29,58 +31,81 @@ router.post('/', authenticateToken, async (req, res) => {
     const existingBorrow = await Borrow.findOne({
       userId,
       bookId,
-      returnDate: null,
+      returnDate: null
     });
 
     if (existingBorrow) {
       return res.status(400).json({ error: 'You have already borrowed this book' });
     }
 
-    // Create borrow record
-    const borrow = new Borrow({
+    // Check borrowing limit (max 5 books per user)
+    const activeBorrows = await Borrow.countDocuments({
       userId,
-      bookId,
+      returnDate: null
     });
 
-    await borrow.save();
+    if (activeBorrows >= 5) {
+      return res.status(400).json({ error: 'Borrowing limit reached. You can borrow maximum 5 books.' });
+    }
 
-    // Decrease available copies
+    // Create borrow record
+    const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
+    
+    const borrow = await Borrow.create({
+      userId,
+      bookId,
+      dueDate
+    });
+
+    // Update book availability
     book.available -= 1;
     await book.save();
 
-    // Populate book and user details
-    await borrow.populate('bookId', 'title author isbn');
-    await borrow.populate('userId', 'name email');
+    // Populate the borrow record with book and user details
+    await borrow.populate([
+      { path: 'bookId', select: 'title author isbn' },
+      { path: 'userId', select: 'name email' }
+    ]);
 
     res.status(201).json({
-      message: 'Book borrowed successfully',
-      borrow,
+      success: true,
+      borrow
     });
   } catch (error) {
     console.error('Borrow book error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Server error borrowing book' });
   }
-});
+};
 
-// Return a book
-router.post('/return', authenticateToken, async (req, res) => {
+// @desc    Return a book
+// @route   POST /api/borrow/return
+// @access  Private
+const returnBook = async (req, res) => {
   try {
     const { borrowId } = req.body;
-    const userId = req.user._id;
 
     if (!borrowId) {
       return res.status(400).json({ error: 'Borrow ID is required' });
     }
 
     // Find the borrow record
-    const borrow = await Borrow.findOne({
-      _id: borrowId,
-      userId,
-      returnDate: null,
-    }).populate('bookId', 'title author isbn');
+    const borrow = await Borrow.findById(borrowId).populate([
+      { path: 'bookId', select: 'title author isbn' },
+      { path: 'userId', select: 'name email' }
+    ]);
 
     if (!borrow) {
-      return res.status(404).json({ error: 'Borrow record not found or book already returned' });
+      return res.status(404).json({ error: 'Borrow record not found' });
+    }
+
+    // Check if the book is already returned
+    if (borrow.returnDate) {
+      return res.status(400).json({ error: 'Book is already returned' });
+    }
+
+    // Check if the user owns this borrow record (unless they're a librarian)
+    if (req.user.role !== 'librarian' && borrow.userId._id.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to return this book' });
     }
 
     // Update borrow record
@@ -88,7 +113,7 @@ router.post('/return', authenticateToken, async (req, res) => {
     borrow.status = 'returned';
     await borrow.save();
 
-    // Increase available copies
+    // Update book availability
     const book = await Book.findById(borrow.bookId._id);
     if (book) {
       book.available += 1;
@@ -96,23 +121,24 @@ router.post('/return', authenticateToken, async (req, res) => {
     }
 
     res.json({
-      message: 'Book returned successfully',
-      borrow,
+      success: true,
+      borrow
     });
   } catch (error) {
     console.error('Return book error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Server error returning book' });
   }
-});
+};
 
-// Get user's borrowed books
-router.get('/my-books', authenticateToken, async (req, res) => {
+// @desc    Get user's borrowed books
+// @route   GET /api/borrow/my-books
+// @access  Private
+const getMyBorrows = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { status = 'all' } = req.query;
+    const { status } = req.query;
+    let query = { userId: req.user.id };
 
-    let query = { userId };
-    
+    // Filter by status
     if (status === 'borrowed') {
       query.returnDate = null;
     } else if (status === 'returned') {
@@ -120,24 +146,33 @@ router.get('/my-books', authenticateToken, async (req, res) => {
     }
 
     const borrows = await Borrow.find(query)
-      .populate('bookId', 'title author isbn')
-      .sort({ borrowDate: -1 });
+      .populate([
+        { path: 'bookId', select: 'title author isbn category' },
+        { path: 'userId', select: 'name email' }
+      ])
+      .sort({ createdAt: -1 });
 
-    res.json({ borrows });
+    res.json({
+      success: true,
+      count: borrows.length,
+      borrows
+    });
   } catch (error) {
-    console.error('Get user borrows error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Get my borrows error:', error);
+    res.status(500).json({ error: 'Server error fetching borrowed books' });
   }
-});
+};
 
-// Get all borrow records (Librarian only)
-router.get('/all', authenticateToken, requireLibrarian, async (req, res) => {
+// @desc    Get all borrow records (Librarian only)
+// @route   GET /api/borrow/all
+// @access  Private (Librarian only)
+const getAllBorrows = async (req, res) => {
   try {
-    const { status = 'all', page = 1, limit = 10 } = req.query;
-
+    const { status, page = 1, limit = 50 } = req.query;
     let query = {};
-    
-    if (status === 'borrowed') {
+
+    // Filter by status
+    if (status === 'active') {
       query.returnDate = null;
     } else if (status === 'returned') {
       query.returnDate = { $ne: null };
@@ -146,30 +181,91 @@ router.get('/all', authenticateToken, requireLibrarian, async (req, res) => {
       query.dueDate = { $lt: new Date() };
     }
 
-    const skip = (page - 1) * limit;
-
     const borrows = await Borrow.find(query)
-      .populate('userId', 'name email')
-      .populate('bookId', 'title author isbn')
-      .sort({ borrowDate: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+      .populate([
+        { path: 'bookId', select: 'title author isbn category' },
+        { path: 'userId', select: 'name email' }
+      ])
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
 
     const total = await Borrow.countDocuments(query);
 
     res.json({
-      borrows,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit),
-      },
+      success: true,
+      count: borrows.length,
+      total,
+      borrows
     });
   } catch (error) {
     console.error('Get all borrows error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Server error fetching borrow records' });
   }
-});
+};
 
-export default router;
+// @desc    Get borrow statistics (Librarian only)
+// @route   GET /api/borrow/stats
+// @access  Private (Librarian only)
+const getBorrowStats = async (req, res) => {
+  try {
+    const totalBorrows = await Borrow.countDocuments();
+    const activeBorrows = await Borrow.countDocuments({ returnDate: null });
+    const overdueBorrows = await Borrow.countDocuments({
+      returnDate: null,
+      dueDate: { $lt: new Date() }
+    });
+    const returnedBorrows = await Borrow.countDocuments({ returnDate: { $ne: null } });
+
+    // Popular books (most borrowed)
+    const popularBooks = await Borrow.aggregate([
+      {
+        $group: {
+          _id: '$bookId',
+          borrowCount: { $sum: 1 }
+        }
+      },
+      { $sort: { borrowCount: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'books',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'book'
+        }
+      },
+      { $unwind: '$book' },
+      {
+        $project: {
+          title: '$book.title',
+          author: '$book.author',
+          borrowCount: 1
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      stats: {
+        totalBorrows,
+        activeBorrows,
+        overdueBorrows,
+        returnedBorrows,
+        popularBooks
+      }
+    });
+  } catch (error) {
+    console.error('Get borrow stats error:', error);
+    res.status(500).json({ error: 'Server error fetching statistics' });
+  }
+};
+
+router.post('/', protect, borrowBook);
+router.post('/return', protect, returnBook);
+router.get('/my-books', protect, getMyBorrows);
+router.get('/all', protect, librarianOnly, getAllBorrows);
+router.get('/stats', protect, librarianOnly, getBorrowStats);
+
+module.exports = router;
+    

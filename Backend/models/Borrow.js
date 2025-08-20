@@ -1,43 +1,58 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const borrowSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'User',
-    required: true,
+    required: true
   },
   bookId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'Book',
-    required: true,
+    required: true
   },
   borrowDate: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   dueDate: {
     type: Date,
-    required: true,
+    required: true
   },
   returnDate: {
-    type: Date,
-    default: null,
+    type: Date
   },
   status: {
     type: String,
     enum: ['borrowed', 'returned', 'overdue'],
-    default: 'borrowed',
-  },
+    default: 'borrowed'
+  }
 }, {
-  timestamps: true,
+  timestamps: true
 });
 
 // Set due date to 14 days from borrow date if not specified
 borrowSchema.pre('save', function(next) {
-  if (!this.dueDate && !this.returnDate) {
-    this.dueDate = new Date(this.borrowDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+  if (this.isNew && !this.dueDate) {
+    this.dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
   }
   next();
 });
 
-export default mongoose.model('Borrow', borrowSchema);
+// Update status based on dates
+borrowSchema.pre('save', function(next) {
+  const now = new Date();
+  if (this.returnDate) {
+    this.status = 'returned';
+  } else if (this.dueDate < now) {
+    this.status = 'overdue';
+  } else {
+    this.status = 'borrowed';
+  }
+  next();
+});
+
+// Prevent borrowing the same book twice
+borrowSchema.index({ userId: 1, bookId: 1, returnDate: 1 });
+
+module.exports = mongoose.model('Borrow', borrowSchema);

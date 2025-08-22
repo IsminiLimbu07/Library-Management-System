@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiFetch } from '../lib/api';
+
 const ContactPage = () => {
   const [formData, setFormData] = useState({
     name: '',

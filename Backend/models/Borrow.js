@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const borrowSchema = new mongoose.Schema({
   userId: {
@@ -55,4 +55,4 @@ borrowSchema.pre('save', function(next) {
 // Prevent borrowing the same book twice
 borrowSchema.index({ userId: 1, bookId: 1, returnDate: 1 });
 
-module.exports = mongoose.model('Borrow', borrowSchema);
+export default mongoose.model('Borrow', borrowSchema);

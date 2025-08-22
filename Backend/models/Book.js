@@ -1,28 +1,24 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const bookSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please add a book title'],
-    trim: true,
-    maxlength: [200, 'Title cannot be more than 200 characters']
+    required: true,
+    trim: true
   },
   author: {
     type: String,
-    required: [true, 'Please add an author'],
-    trim: true,
-    maxlength: [100, 'Author name cannot be more than 100 characters']
+    required: true
   },
   isbn: {
     type: String,
-    required: [true, 'Please add an ISBN'],
-    unique: true,
-    trim: true
+    required: true,
+    unique: true
   },
   quantity: {
     type: Number,
-    required: [true, 'Please add quantity'],
-    min: [1, 'Quantity must be at least 1']
+    required: true,
+    min: 0
   },
   available: {
     type: Number,
@@ -30,21 +26,16 @@ const bookSchema = new mongoose.Schema({
     min: 0
   },
   description: {
-    type: String,
-    maxlength: [1000, 'Description cannot be more than 1000 characters']
+    type: String
   },
   category: {
-    type: String,
-    enum: ['Fiction', 'Non-Fiction', 'Science', 'Technology', 'History', 'Biography', 'Children', 'Reference', 'Other'],
-    default: 'Other'
+    type: String
   },
   publishedYear: {
-    type: Number,
-    min: [1000, 'Published year must be valid'],
-    max: [new Date().getFullYear(), 'Published year cannot be in the future']
+    type: Number
   },
   addedBy: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   }
@@ -52,20 +43,13 @@ const bookSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Set available count to quantity when creating a new book
+// Pre-save hook to ensure available is set correctly for new books
 bookSchema.pre('save', function(next) {
-  if (this.isNew) {
+  // If this is a new book and available is not set, set it to quantity
+  if (this.isNew && (this.available === undefined || this.available === null)) {
     this.available = this.quantity;
   }
   next();
 });
 
-// Ensure available count doesn't exceed quantity
-bookSchema.pre('save', function(next) {
-  if (this.available > this.quantity) {
-    this.available = this.quantity;
-  }
-  next();
-});
-
-module.exports = mongoose.model('Book', bookSchema);
+export default mongoose.model('Book', bookSchema);

@@ -1,7 +1,7 @@
-const express = require('express');
-const Borrow = require('../models/Borrow');
-const Book = require('../models/Book');
-const { protect, librarianOnly } = require('../middleware/auth');
+import express from 'express';
+import Borrow from '../models/Borrow.js';
+import Book from '../models/Book.js';
+import { authenticateToken, librarianOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ const router = express.Router();
 const borrowBook = async (req, res) => {
   try {
     const { bookId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id; // FIXED: Use _id consistently
 
     if (!bookId) {
       return res.status(400).json({ error: 'Book ID is required' });
@@ -104,7 +104,7 @@ const returnBook = async (req, res) => {
     }
 
     // Check if the user owns this borrow record (unless they're a librarian)
-    if (req.user.role !== 'librarian' && borrow.userId._id.toString() !== req.user.id) {
+    if (req.user.role !== 'librarian' && borrow.userId._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: 'Not authorized to return this book' });
     }
 
@@ -136,7 +136,7 @@ const returnBook = async (req, res) => {
 const getMyBorrows = async (req, res) => {
   try {
     const { status } = req.query;
-    let query = { userId: req.user.id };
+    let query = { userId: req.user._id }; // FIXED: Use _id consistently
 
     // Filter by status
     if (status === 'borrowed') {
@@ -261,11 +261,10 @@ const getBorrowStats = async (req, res) => {
   }
 };
 
-router.post('/', protect, borrowBook);
-router.post('/return', protect, returnBook);
-router.get('/my-books', protect, getMyBorrows);
-router.get('/all', protect, librarianOnly, getAllBorrows);
-router.get('/stats', protect, librarianOnly, getBorrowStats);
+router.post('/', authenticateToken, borrowBook);
+router.post('/return', authenticateToken, returnBook);
+router.get('/my-books', authenticateToken, getMyBorrows);
+router.get('/all', authenticateToken, librarianOnly, getAllBorrows);
+router.get('/stats', authenticateToken, librarianOnly, getBorrowStats);
 
-module.exports = router;
-    
+export default router;

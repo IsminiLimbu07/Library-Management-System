@@ -1,6 +1,7 @@
-const express = require('express');
-const Book = require('../models/Book');
-const { protect, librarianOnly } = require('../middleware/auth');
+import express from 'express';
+import Book from '../models/Book.js';
+import Borrow from '../models/Borrow.js'; // FIXED: Changed from require to import
+import { authenticateToken, librarianOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -88,15 +89,18 @@ const createBook = async (req, res) => {
       return res.status(400).json({ error: 'Book with this ISBN already exists' });
     }
 
+    const bookQuantity = parseInt(quantity);
+
     const book = await Book.create({
       title,
       author,
       isbn,
-      quantity: parseInt(quantity),
+      quantity: bookQuantity,
+      available: bookQuantity, // FIXED: Set available equal to quantity initially
       description,
       category,
       publishedYear: publishedYear ? parseInt(publishedYear) : undefined,
-      addedBy: req.user.id
+      addedBy: req.user._id // FIXED: Use _id consistently
     });
 
     await book.populate('addedBy', 'name email');
@@ -200,7 +204,6 @@ const deleteBook = async (req, res) => {
     }
 
     // Check if book has active borrows
-    const Borrow = require('../models/Borrow');
     const activeBorrows = await Borrow.countDocuments({ 
       bookId: req.params.id, 
       returnDate: null 
@@ -229,8 +232,8 @@ const deleteBook = async (req, res) => {
 
 router.get('/', getBooks);
 router.get('/:id', getBook);
-router.post('/', protect, librarianOnly, createBook);
-router.put('/:id', protect, librarianOnly, updateBook);
-router.delete('/:id', protect, librarianOnly, deleteBook);
+router.post('/', authenticateToken, librarianOnly, createBook);
+router.put('/:id', authenticateToken, librarianOnly, updateBook);
+router.delete('/:id', authenticateToken, librarianOnly, deleteBook);
 
-module.exports = router;
+export default router;

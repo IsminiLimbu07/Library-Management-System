@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { apiFetch } from '../lib/api';
+
 const DashboardPage = () => {
   const { user, getAuthHeader, isLibrarian } = useAuth();
   const [books, setBooks] = useState([]);

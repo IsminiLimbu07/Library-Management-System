@@ -15,3 +15,4 @@ const Input = React.forwardRef(({ className = '', type = 'text', ...props }, ref
 Input.displayName = "Input";
 
 export { Input };
+  

@@ -51,7 +51,7 @@ const LoginPage = () => {
             Or{' '}
             <Link 
               to="/register" 
-              className="font-medium text-library-primary hover:text-library-primary/80"
+              className="font-medium text-primary hover:text-library-primary/80"
             >
               create a new account
             </Link>

@@ -3,62 +3,71 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-library-secondary text-white py-8 mt-12">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Company Info */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">📚 LibraryMS</h3>
-            <p className="text-gray-300 text-sm">
-              A modern library management system that helps libraries 
-              efficiently manage their book collections and borrowing processes.
-            </p>
+    <footer className="footer-main">
+      <div className="footer-container">
+        <div className="footer-content">
+          
+          {/* Left Column - Library Management */}
+          <div className="footer-column">
+            <div className="footer-brand">
+              <div className="footer-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="footer-icon">
+                  <rect x="3" y="4" width="18" height="16" rx="2" fill="#D4A017"/>
+                  <rect x="5" y="6" width="6" height="2" rx="1" fill="#2C4A7E"/>
+                  <rect x="5" y="9" width="8" height="2" rx="1" fill="#8A94A6"/>
+                  <rect x="5" y="12" width="10" height="2" rx="1" fill="#D4A017"/>
+                  <circle cx="17" cy="8" r="2" fill="#2C4A7E"/>
+                </svg>
+                <h3 className="footer-brand-text">Library Management</h3>
+              </div>
+              <p className="footer-tagline">
+                Your digital gateway to knowledge and learning
+              </p>
+            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
+          {/* Middle Column - Quick Links */}
+          <div className="footer-column">
+            <h4 className="footer-heading">Quick Links</h4>
+            <ul className="footer-links">
               <li>
-                <Link 
-                  to="/" 
-                  className="text-gray-300 hover:text-library-accent transition-colors"
-                >
-                  Home
+                <Link to="/about" className="footer-link">
+                  About Us
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/about" 
-                  className="text-gray-300 hover:text-library-accent transition-colors"
-                >
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/contact" 
-                  className="text-gray-300 hover:text-library-accent transition-colors"
-                >
+                <Link to="/contact" className="footer-link">
                   Contact
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard" className="footer-link">
+                  Dashboard
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact Info */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Contact</h4>
-            <div className="text-gray-300 text-sm space-y-2">
-              <p>📧 support@libraryms.com</p>
-              <p>📞 (555) 123-4567</p>
-              <p>📍 123 Library Street, Book City, BC 12345</p>
-            </div>
+          {/* Right Column - Support */}
+          <div className="footer-column">
+            <h4 className="footer-heading">Support</h4>
+            <ul className="footer-links">
+              <li>
+                <span className="footer-link">Email Support</span>
+              </li>
+              <li>
+                <span className="footer-link">Phone: (234) 567-890</span>
+              </li>
+            </ul>
           </div>
+
         </div>
 
-        <div className="border-t border-gray-600 mt-8 pt-4 text-center text-gray-400 text-sm">
-          <p>&copy; 2024 LibraryMS. All rights reserved.</p>
+        {/* Copyright Notice */}
+        <div className="footer-bottom">
+          <p className="footer-copyright">
+            © 2024 Library Management System. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

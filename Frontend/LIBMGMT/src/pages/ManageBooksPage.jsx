@@ -214,7 +214,7 @@ const ManageBooksPage = () => {
                     <td className="p-4 text-center">
                       <div className="flex justify-center gap-2">
                         <Link
-                          to={`/librarian/edit-book/${book._id}`}
+                          to={`/librarian/books/${book._id}/edit`}
                           className="btn btn-secondary text-sm px-3 py-1"
                         >
                           ✏️ Edit

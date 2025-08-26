@@ -234,14 +234,24 @@ const DashboardPage = () => {
           <div className="books-grid">
             {filteredBooks.map((book) => (
               <div key={book._id} className="book-card">
+                {book.image ? (
+                  <img
+                    src={book.image}
+                    alt={book.title + ' cover'}
+                    className="book-cover mb-2 rounded shadow"
+                    style={{ width: '100%', maxHeight: '180px', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div className="book-cover-placeholder mb-2 rounded shadow flex items-center justify-center bg-gray-100" style={{ width: '100%', height: '180px' }}>
+                    <span className="text-gray-400">No Image</span>
+                  </div>
+                )}
                 <h3 className="book-title">{book.title}</h3>
                 <p className="book-author">by {book.author}</p>
                 <p className="book-isbn">ISBN: {book.isbn}</p>
-                
                 <div className="book-category">
                   <span className="category-badge">{book.category}</span>
                 </div>
-                
                 <div className="availability-section">
                   <div className="availability-count">
                     {book.available} / {book.quantity}
@@ -250,7 +260,6 @@ const DashboardPage = () => {
                     ✓ Available
                   </div>
                 </div>
-
                 <button
                   onClick={() => handleBorrowBook(book._id)}
                   className="borrow-book-button"

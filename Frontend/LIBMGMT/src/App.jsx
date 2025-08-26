@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import LibrarianDashboard from './pages/LibrarianDashboard';
 import AddBookPage from './pages/AddBookPage';
 import ManageBooksPage from './pages/ManageBooksPage';
+import EditBookPage from './pages/EditBookPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import NotFound from './pages/NotFound';
@@ -125,11 +126,21 @@ const AppContent = () => {
           </ProtectedRoute>
         } 
       />
+
       <Route 
         path="/librarian/add-book" 
         element={
           <ProtectedRoute requireLibrarian={true}>
             <Layout><AddBookPage /></Layout>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/librarian/books/:id/edit" 
+        element={
+          <ProtectedRoute requireLibrarian={true}>
+            <Layout><EditBookPage /></Layout>
           </ProtectedRoute>
         } 
       />

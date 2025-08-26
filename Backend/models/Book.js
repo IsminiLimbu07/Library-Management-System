@@ -34,6 +34,10 @@ const bookSchema = new mongoose.Schema({
   publishedYear: {
     type: Number
   },
+  image: {
+    type: String,
+    default: ''
+  },
   addedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

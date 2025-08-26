@@ -10,7 +10,8 @@ const AddBookPage = () => {
     quantity: '',
     description: '',
     category: '',
-    publishedYear: ''
+    publishedYear: '',
+    image: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -102,6 +103,21 @@ const AddBookPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
+                  Book Cover Image URL
+                </label>
+                <input
+                  type="text"
+                  id="image"
+                  name="image"
+                  className="input w-full"
+                  placeholder="https://example.com/cover.jpg"
+                  value={formData.image}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500 mt-1">Paste a direct image URL for the book cover.</p>
+              </div>
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                   Title *

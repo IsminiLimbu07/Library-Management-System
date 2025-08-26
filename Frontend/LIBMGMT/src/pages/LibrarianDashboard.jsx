@@ -305,7 +305,7 @@ const LibrarianDashboard = () => {
 
                         <div className="librarian-actions">
                           <Link
-                            to={`/librarian/edit-book/${book._id}`}
+                            to={`/librarian/books/${book._id}/edit`}
                             className="edit-book-button"
                           >
                             Edit Book

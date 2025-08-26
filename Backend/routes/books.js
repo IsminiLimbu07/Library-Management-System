@@ -76,7 +76,7 @@ const getBook = async (req, res) => {
 // @access  Private (Librarian only)
 const createBook = async (req, res) => {
   try {
-    const { title, author, isbn, quantity, description, category, publishedYear } = req.body;
+    const { title, author, isbn, quantity, description, category, publishedYear, image } = req.body;
 
     // Validation
     if (!title || !author || !isbn || !quantity) {
@@ -100,6 +100,7 @@ const createBook = async (req, res) => {
       description,
       category,
       publishedYear: publishedYear ? parseInt(publishedYear) : undefined,
+      image: image || '',
       addedBy: req.user._id // FIXED: Use _id consistently
     });
 
@@ -127,7 +128,7 @@ const createBook = async (req, res) => {
 // @access  Private (Librarian only)
 const updateBook = async (req, res) => {
   try {
-    const { title, author, isbn, quantity, description, category, publishedYear } = req.body;
+    const { title, author, isbn, quantity, description, category, publishedYear, image } = req.body;
 
     let book = await Book.findById(req.params.id);
 
@@ -165,7 +166,8 @@ const updateBook = async (req, res) => {
       available: newAvailable,
       description: description !== undefined ? description : book.description,
       category: category || book.category,
-      publishedYear: publishedYear ? parseInt(publishedYear) : book.publishedYear
+      publishedYear: publishedYear ? parseInt(publishedYear) : book.publishedYear,
+      image: image !== undefined ? image : book.image
     };
 
     book = await Book.findByIdAndUpdate(req.params.id, updateData, {

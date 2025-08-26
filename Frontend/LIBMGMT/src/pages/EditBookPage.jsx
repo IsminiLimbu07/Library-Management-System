@@ -11,7 +11,8 @@ const EditBookPage = () => {
     quantity: '',
     description: '',
     category: '',
-    publishedYear: ''
+    publishedYear: '',
+    image: ''
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +43,8 @@ const EditBookPage = () => {
           quantity: book.quantity?.toString() || '',
           description: book.description || '',
           category: book.category || '',
-          publishedYear: book.publishedYear?.toString() || ''
+          publishedYear: book.publishedYear?.toString() || '',
+          image: book.image || ''
         });
       } else {
         setError(data.error || 'Book not found');
@@ -85,6 +87,7 @@ const EditBookPage = () => {
     setError('');
 
     try {
+      const { apiFetch } = await import('../lib/api');
       const response = await apiFetch(`/api/books/${id}`, {
         method: 'PUT',
         headers: {
@@ -102,7 +105,12 @@ const EditBookPage = () => {
           navigate('/librarian/books');
         }, 2000);
       } else {
-        setError(data.error || 'Failed to update book');
+        // Show specific error for demo user or permission issues
+        if (data.error && data.error.toLowerCase().includes('permission')) {
+          setError('You do not have permission to edit this book. (Demo users may have restricted access)');
+        } else {
+          setError(data.error || 'Failed to update book');
+        }
       }
     } catch (error) {
       console.error('Error updating book:', error);
@@ -165,6 +173,32 @@ const EditBookPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
+                  Book Cover Image URL
+                </label>
+                <input
+                  type="text"
+                  id="image"
+                  name="image"
+                  className="input w-full"
+                  placeholder="https://example.com/cover.jpg"
+                  value={formData.image}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500 mt-1">Paste a direct image URL for the book cover.</p>
+                {formData.image && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.image}
+                      alt="Book Cover Preview"
+                      className="rounded shadow"
+                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover' }}
+                      onError={e => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/180x240?text=No+Image'; }}
+                    />
+                  </div>
+                )}
+              </div>
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                   Title *

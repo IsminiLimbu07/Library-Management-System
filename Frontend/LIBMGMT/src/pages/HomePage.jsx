@@ -11,7 +11,7 @@ const HomePage = () => {
       <section className="bg-gradient-to-br from-library-primary to-library-secondary text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-line homepage-title">
-            Welcome to LibraryMS
+            Welcome to BookSphere
           </h1>
           <p className="text-lg  md:text-xl text-line mb-8 max-w-2xl mx-auto text-white">
             A modern library management system that streamlines book borrowing, 

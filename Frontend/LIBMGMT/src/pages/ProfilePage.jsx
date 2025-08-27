@@ -261,7 +261,7 @@ const ProfilePage = () => {
                     <h3 className="font-medium text-gray-800 mb-3">Statistics</h3>
                     <div className="grid grid-cols-2 gap-4 text-center">
                       <div>
-                        <div className="text-2xl font-bold text-library-primary">
+                        <div className="text-2xl font-bold text-library-secondary">
                           {borrowHistory.length}
                         </div>
                         <div className="text-sm text-gray-600">Total Books Borrowed</div>

@@ -18,7 +18,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="text-white text-xl font-bold">
-              📚 LibraryMS
+              📚 BookSphere
             </div>
           </Link>
 

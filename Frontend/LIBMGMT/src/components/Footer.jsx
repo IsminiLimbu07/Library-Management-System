@@ -18,7 +18,7 @@ const Footer = () => {
                   <rect x="5" y="12" width="10" height="2" rx="1" fill="#D4A017"/>
                   <circle cx="17" cy="8" r="2" fill="#2C4A7E"/>
                 </svg>
-                <h3 className="footer-brand-text">Library Management</h3>
+                <h3 className="footer-brand-text">BookSphere</h3>
               </div>
               <p className="footer-tagline">
                 Your digital gateway to knowledge and learning
@@ -56,7 +56,7 @@ const Footer = () => {
                 <span className="footer-link">Email Support</span>
               </li>
               <li>
-                <span className="footer-link">Phone: (234) 567-890</span>
+                <span className="footer-link">Phone: (025) 123-456</span>
               </li>
             </ul>
           </div>
@@ -66,7 +66,7 @@ const Footer = () => {
         {/* Copyright Notice */}
         <div className="footer-bottom">
           <p className="footer-copyright">
-            © 2024 Library Management System. All rights reserved.
+            © 2025 Library Management System. All rights reserved.
           </p>
         </div>
       </div>

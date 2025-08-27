@@ -82,7 +82,7 @@ const RegisterPage = () => {
             Or{' '}
             <Link 
               to="/login" 
-              className="font-medium text-library-primary hover:text-library-primary/80"
+              className="font-medium text-secondary hover:text-library-primary/80"
             >
               sign in to your existing account
             </Link>

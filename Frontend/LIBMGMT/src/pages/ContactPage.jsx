@@ -44,12 +44,12 @@ const ContactPage = () => {
           <div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">Get in Touch</h2>
             
-            <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-8">
               <div className="flex items-start space-x-4">
                 <div className="text-2xl">📧</div>
                 <div>
                   <h3 className="font-semibold text-gray-800">Email</h3>
-                  <p className="text-gray-600">support@libraryms.com</p>
+                  <p className="text-gray-600">booksphere@libraryms.com</p>
                   <p className="text-sm text-gray-500">We'll respond within 24 hours</p>
                 </div>
               </div>
@@ -58,8 +58,8 @@ const ContactPage = () => {
                 <div className="text-2xl">📞</div>
                 <div>
                   <h3 className="font-semibold text-gray-800">Phone</h3>
-                  <p className="text-gray-600">(555) 123-4567</p>
-                  <p className="text-sm text-gray-500">Mon-Fri, 9AM-5PM EST</p>
+                  <p className="text-gray-600">(025) 123-456</p>
+                  <p className="text-sm text-gray-500">Mon-Fri, 9AM-5PM </p>
                 </div>
               </div>
 
@@ -68,15 +68,15 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-semibold text-gray-800">Address</h3>
                   <p className="text-gray-600">
-                    123 Library Street<br />
-                    Book City, BC 12345<br />
-                    United States
+                    123 Book Street<br />
+                    Pustak Sadak, PS 12345<br />
+                    Nepal
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 p-6 bg-library-primary/10 rounded-lg">
+            <div className="bg-white rounded-lg shadow-sm p-8 mt-8">
               <h3 className="font-semibold text-gray-800 mb-2">Need Technical Support?</h3>
               <p className="text-gray-600 text-sm">
                 If you're experiencing technical issues, please include:
@@ -91,7 +91,7 @@ const ContactPage = () => {
 
           {/* Contact Form */}
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Send us a Message</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-6">Send us a Message</h2>
             
             {submitted ? (
               <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-8 rounded-lg text-center">

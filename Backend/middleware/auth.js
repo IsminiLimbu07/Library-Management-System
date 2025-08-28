@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-// Protect routes
+// Authenticate JWT and attach user to request
 const authenticateToken = async (req, res, next) => {
   let token;
 
@@ -50,4 +50,17 @@ const borrowerOnly = (req, res, next) => {
   }
 };
 
-export { authenticateToken, librarianOnly, borrowerOnly };
+// Generic role-based authorization
+const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authorized, no user context' });
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied for this role' });
+    }
+    next();
+  };
+};
+
+export { authenticateToken, authorize, librarianOnly, borrowerOnly };

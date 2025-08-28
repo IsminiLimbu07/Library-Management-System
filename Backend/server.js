@@ -3,27 +3,36 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+
+// Import database connection
 import connectDB from './config/database.js';
+
+// Import route files
 import authRoutes from './routes/auth.js';
 import bookRoutes from './routes/books.js';
 import borrowRoutes from './routes/borrow.js';
 
-// Load env variables
+// Load environment variables
 dotenv.config();
 
-// Connect to database
+// Connect to MongoDB database
 connectDB();
 
+// Initialize Express app
 const app = express();
 
-// Security middleware
+// ============================================
+// MIDDLEWARE SETUP
+// ============================================
+
+// Security middleware - adds various security headers
 app.use(helmet());
 
-// CORS configuration - simplified
+// CORS configuration - allows frontend to communicate with backend
 app.use(cors({
   origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
+    'http://localhost:3000',     // React dev server
+    'http://localhost:5173',     // Vite dev server
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173'
   ],
@@ -31,32 +40,36 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Body parser middleware
+// Body parser middleware - enables reading JSON and form data
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
+// Rate limiting middleware - protects against spam/abuse
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 15 * 60 * 1000,  // 15 minutes window
+  max: 100,                   // Limit to 100 requests per window
   message: {
     error: 'Too many requests from this IP, please try again later.'
   }
 });
 
-// Apply rate limiting to API routes only
+// Apply rate limiting to all API routes
 app.use('/api/', limiter);
 
-// Auth rate limiting
+// Special rate limiting for authentication routes
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Allow more attempts for dev
+  windowMs: 15 * 60 * 1000,  // 15 minutes window
+  max: 50,                    // Allow 50 auth attempts per window
   message: {
     error: 'Too many authentication attempts, please try again later.'
   }
 });
 
-// Health check route
+// ============================================
+// ROUTES SETUP
+// ============================================
+
+// Health check route - used to verify server is running
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -65,12 +78,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/books', bookRoutes);
-app.use('/api/borrow', borrowRoutes);
+// API Routes - connect route handlers to their respective endpoints
+app.use('/api/auth', authLimiter, authRoutes);     // Authentication routes
+app.use('/api/books', bookRoutes);                 // Book management routes  
+app.use('/api/borrow', borrowRoutes);              // Book borrowing routes
 
-// Handle 404 routes
+// ============================================
+// ERROR HANDLING MIDDLEWARE
+// ============================================
+
+// Handle 404 routes - when no route matches the request
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
@@ -78,7 +95,7 @@ app.use('*', (req, res) => {
   });
 });
 
-// Enhanced global error handler
+// Global error handler - catches all unhandled errors
 app.use((error, req, res, next) => {
   console.error('❌ Unhandled error:', error);
   console.error('Stack trace:', error.stack);
@@ -86,7 +103,7 @@ app.use((error, req, res, next) => {
   let statusCode = error.statusCode || 500;
   let errorMessage = 'Server Error';
   
-  // Handle specific MongoDB errors
+  // Handle specific MongoDB/Mongoose errors
   if (error.name === 'ValidationError') {
     statusCode = 400;
     errorMessage = Object.values(error.errors).map(val => val.message).join(', ');
@@ -117,17 +134,26 @@ app.use((error, req, res, next) => {
   });
 });
 
+// ============================================
+// SERVER STARTUP
+// ============================================
+
 // Store server instance for proper cleanup
 let serverInstance;
 
-// Try to use PORT, fallback to next available if in use
+// Try to use PORT from environment, fallback to 5000
 const DEFAULT_PORT = process.env.PORT || 5000;
 
+// Function to start server with port fallback
 function startServer(port) {
   serverInstance = app.listen(port, () => {
-    console.log(`\n🚀 Library Management System API Server Running!\n📡 Port: ${port}\n🌍 Environment: ${process.env.NODE_ENV || 'development'}\n📱 Health Check: http://localhost:${port}/health\n  `);
+    console.log(`\n🚀 Library Management System API Server Running!`);
+    console.log(`📡 Port: ${port}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📱 Health Check: http://localhost:${port}/health\n`);
   });
   
+  // Handle port already in use error
   serverInstance.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       console.warn(`Port ${port} in use, trying ${Number(port) + 1}...`);
@@ -138,7 +164,12 @@ function startServer(port) {
   });
 }
 
+// Start the server
 startServer(DEFAULT_PORT);
+
+// ============================================
+// GRACEFUL SHUTDOWN HANDLING
+// ============================================
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {

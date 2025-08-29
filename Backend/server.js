@@ -87,7 +87,7 @@ app.use('/api/borrow', borrowRoutes);              // Book borrowing routes
 // ERROR HANDLING MIDDLEWARE
 // ============================================
 
-// Handle 404 routes - when no route matches the requestdc
+// Handle 404 routes - when no route matches the request
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,

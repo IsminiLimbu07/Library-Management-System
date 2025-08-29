@@ -7,10 +7,32 @@ import dotenv from 'dotenv';
 // Import database connection
 import connectDB from './config/database.js';
 
-// Import route files
-import authRoutes from './routes/auth.js';
-import bookRoutes from './routes/books.js';
-import borrowRoutes from './routes/borrow.js';
+// Import controllers - using your exact file paths
+import {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  updateUserProfile
+} from './controllers/authController.js';
+
+import {
+  getBooks,
+  getBook,
+  createBook,
+  updateBook,
+  deleteBook
+} from './controllers/bookController.js';
+
+import {
+  borrowBook,
+  returnBook,
+  getMyBorrows,
+  getAllBorrows,
+  getBorrowStats
+} from './controllers/borrowController.js';
+
+// Import middleware - using your exact file paths
+import { authenticateToken, authorize, librarianOnly } from './middleware/auth.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,93 +42,106 @@ connectDB();
 
 // Initialize Express app
 const app = express();
+const PORT = process.env.PORT || 8000;
 
 // ============================================
-// MIDDLEWARE SETUP
+// MIDDLEWARE SETUP (Similar to teacher's style)
 // ============================================
 
-// Security middleware - adds various security headers
+// Security middleware
 app.use(helmet());
 
-// CORS configuration - allows frontend to communicate with backend
+// CORS configuration - enabling CORS for all routes
 app.use(cors({
   origin: [
     'http://localhost:3000',     // React dev server
     'http://localhost:5173',     // Vite dev server
+    'http://localhost:8081',     // Expo dev server (your current frontend)
+    'http://localhost:19006',    // Expo web dev server
     'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:8081',     // Alternative localhost for Expo
+    'http://127.0.0.1:19006'
   ],
-  credentials: true,
-  optionsSuccessStatus: 200
+  credentials: true
 }));
 
-// Body parser middleware - enables reading JSON and form data
+// Body parser middleware - for reading JSON data
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting middleware - protects against spam/abuse
+// Rate limiting middleware - protect against spam
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes window
-  max: 100,                   // Limit to 100 requests per window
-  message: {
-    error: 'Too many requests from this IP, please try again later.'
-  }
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per 15 minutes
+  message: { error: 'Too many requests, please try again later.' }
 });
-
-// Apply rate limiting to all API routes
 app.use('/api/', limiter);
 
-// Special rate limiting for authentication routes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes window
-  max: 50,                    // Allow 50 auth attempts per window
-  message: {
-    error: 'Too many authentication attempts, please try again later.'
-  }
-});
-
 // ============================================
-// ROUTES SETUP
+// ROUTES (Simple and clear like teacher's code)
 // ============================================
 
-// Health check route - used to verify server is running
+// Health check route - to test if server is running
 app.get('/health', (req, res) => {
   res.status(200).json({
-    success: true,
-    message: 'Library Management System API is running',
+    message: 'Library Management System API is running successfully!',
     timestamp: new Date().toISOString()
   });
 });
 
-// API Routes - connect route handlers to their respective endpoints
-app.use('/api/auth', authLimiter, authRoutes);     // Authentication routes
-app.use('/api/books', bookRoutes);                 // Book management routes  
-app.use('/api/borrow', borrowRoutes);              // Book borrowing routes
+// Authentication Routes (similar to teacher's /auth route)
+app.post('/api/auth/register', registerUser);          // Register new user
+app.post('/api/auth/login', loginUser);                // Login user
+app.get('/api/auth/me', authenticateToken, getUserProfile);              // Get user profile
+app.put('/api/auth/profile', authenticateToken, updateUserProfile);      // Update user profile
+
+// Book Management Routes (similar to teacher's /employee routes)
+app.post('/api/books', authenticateToken, authorize('librarian'), createBook);     // Create new book (librarian only)
+app.get('/api/books', getBooks);                                                   // Get all books (public)
+app.get('/api/books/:id', getBook);                                               // Get book by ID (public)
+app.put('/api/books/:id', authenticateToken, authorize('librarian'), updateBook);  // Update book (librarian only)
+app.delete('/api/books/:id', authenticateToken, authorize('librarian'), deleteBook); // Delete book (librarian only)
+
+// Borrow Management Routes
+app.post('/api/borrow', authenticateToken, borrowBook);                           // Borrow a book
+app.post('/api/borrow/return', authenticateToken, returnBook);                    // Return a book
+app.get('/api/borrow/my-books', authenticateToken, getMyBorrows);                 // Get user's borrowed books
+app.get('/api/borrow/all', authenticateToken, librarianOnly, getAllBorrows);      // Get all borrow records (librarian only)
+app.get('/api/borrow/stats', authenticateToken, librarianOnly, getBorrowStats);   // Get borrow statistics (librarian only)
+
+// Route to verify Token (exactly like teacher's style)
+app.get('/api/verify-token', authenticateToken, (req, res) => {
+  res.status(200).json({ message: "Token verified successfully!" });
+});
+
+// Additional route to match your current frontend (temporary compatibility)
+app.get('/', authenticateToken, (req, res) => {
+  res.status(200).json({ message: "Token verified successfully!" });
+});
 
 // ============================================
-// ERROR HANDLING MIDDLEWARE
+// ERROR HANDLING (Simple like teacher's code)
 // ============================================
 
-// Handle 404 routes - when no route matches the request
+// Handle 404 routes - when route is not found
 app.use('*', (req, res) => {
   res.status(404).json({
-    success: false,
     error: `Route ${req.originalUrl} not found`
   });
 });
 
-// Global error handler - catches all unhandled errors
+// Global error handler - catch all errors
 app.use((error, req, res, next) => {
-  console.error('❌ Unhandled error:', error);
-  console.error('Stack trace:', error.stack);
+  console.log("Error occurred:", error.message);
   
   let statusCode = error.statusCode || 500;
-  let errorMessage = 'Server Error';
+  let errorMessage = error.message || 'Server Error';
   
-  // Handle specific MongoDB/Mongoose errors
+  // Handle common database errors (simple approach)
   if (error.name === 'ValidationError') {
     statusCode = 400;
-    errorMessage = Object.values(error.errors).map(val => val.message).join(', ');
+    errorMessage = Object.values(error.errors).map(err => err.message).join(', ');
   } else if (error.code === 11000) {
     statusCode = 400;
     const field = Object.keys(error.keyPattern)[0];
@@ -114,78 +149,27 @@ app.use((error, req, res, next) => {
   } else if (error.name === 'CastError') {
     statusCode = 404;
     errorMessage = 'Resource not found';
-  } else if (error.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    errorMessage = 'Invalid token';
-  } else if (error.name === 'TokenExpiredError') {
-    statusCode = 401;
-    errorMessage = 'Token expired';
-  } else if (error.message) {
-    errorMessage = error.message;
   }
-
-  // Log detailed error info for debugging
-  console.error(`Error details: ${errorMessage} | Status: ${statusCode} | Path: ${req.path} | Method: ${req.method}`);
 
   res.status(statusCode).json({
-    success: false,
-    error: errorMessage,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    error: errorMessage
   });
 });
 
 // ============================================
-// SERVER STARTUP
+// SERVER STARTUP (Exactly like teacher's style)
 // ============================================
 
-// Store server instance for proper cleanup
-let serverInstance;
-
-// Try to use PORT from environment, fallback to 5000
-const DEFAULT_PORT = process.env.PORT || 5000;
-
-// Function to start server with port fallback
-function startServer(port) {
-  serverInstance = app.listen(port, () => {
-    console.log(`\n🚀 Library Management System API Server Running!`);
-    console.log(`📡 Port: ${port}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`📱 Health Check: http://localhost:${port}/health\n`);
-  });
-  
-  // Handle port already in use error
-  serverInstance.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`Port ${port} in use, trying ${Number(port) + 1}...`);
-      startServer(Number(port) + 1);
-    } else {
-      throw err;
-    }
-  });
-}
-
-// Start the server
-startServer(DEFAULT_PORT);
-
-// ============================================
-// GRACEFUL SHUTDOWN HANDLING
-// ============================================
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
-  console.log('Unhandled Rejection at:', promise, 'reason:', err);
-  if (serverInstance) {
-    serverInstance.close(() => {
-      process.exit(1);
-    });
-  } else {
-    process.exit(1);
-  }
+// Starting the server (simple approach like teacher's code)
+app.listen(PORT, () => {
+  console.log("🚀 Library Management System Server is running on port", PORT);
+  console.log("📱 Health Check: http://localhost:" + PORT + "/health");
+  console.log("🌍 Environment:", process.env.NODE_ENV || 'development');
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.log('Uncaught Exception:', err);
+// Handle unhandled promise rejections (basic error handling)
+process.on('unhandledRejection', (err) => {
+  console.log('Unhandled Rejection:', err.message);
   process.exit(1);
 });
 

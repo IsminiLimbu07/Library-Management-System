@@ -1,12 +1,15 @@
 // Centralized API utility to handle backend URL
 // In development, we prefer using Vite's proxy by default (relative /api path)
 // Set VITE_API_URL to override and use an absolute backend URL.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://library-management-system-jdgu.onrender.com';
 
 export function apiFetch(path, options = {}) {
   // Ensure path always starts with a slash
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const url = path.startsWith('http') ? path : `${API_BASE_URL}${normalizedPath}`;
+  // const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  // const url = path.startsWith('http') ? path : `${API_BASE_URL}${normalizedPath}`;
+
+  const url = API_BASE_URL ;
+  
   
   // Add default headers
   const defaultHeaders = {

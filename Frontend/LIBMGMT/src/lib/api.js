@@ -5,11 +5,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://library-management
 
 export function apiFetch(path, options = {}) {
   // Ensure path always starts with a slash
-  // const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  // const url = path.startsWith('http') ? path : `${API_BASE_URL}${normalizedPath}`;
-
-  const url = API_BASE_URL ;
-  
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${normalizedPath}`;
   
   // Add default headers
   const defaultHeaders = {

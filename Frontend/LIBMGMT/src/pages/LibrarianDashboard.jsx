@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { API_BASE_URL } from '../lib/api';
 
 const LibrarianDashboard = () => {
   const [books, setBooks] = useState([]);
@@ -26,7 +27,7 @@ const LibrarianDashboard = () => {
       
       // Fetch books and borrow records in parallel
       const [booksResponse, borrowsResponse] = await Promise.all([
-        fetch('/api/books'),
+        fetch(`${API_BASE_URL}/api/books`),
         fetch('/api/borrow/all', {
           headers: getAuthHeader()
         })

@@ -14,6 +14,9 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Get API base URL from environment variable
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -21,29 +24,57 @@ const DashboardPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(''); // Clear any previous errors
       
       // Fetch available books
-      const booksResponse = await fetch('/api/books');
+      const booksResponse = await fetch(`${API_BASE_URL}/api/books`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Check if response is JSON
+      const contentType = booksResponse.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error('Server returned non-JSON response');
+      }
+      
       const booksData = await booksResponse.json();
       
       if (booksResponse.ok) {
         setBooks(booksData.books || []);
+      } else {
+        throw new Error(booksData.error || 'Failed to fetch books');
       }
 
-      // Fetch user's borrowed books
+      // Fetch user's borrowed books (only for borrowers)
       if (!isLibrarian) {
-        const borrowsResponse = await fetch('/api/borrow/my-books?status=borrowed', {
-          headers: getAuthHeader(),
-        });
-        const borrowsData = await borrowsResponse.json();
-        
-        if (borrowsResponse.ok) {
-          setMyBorrows(borrowsData.borrows || []);
+        try {
+          const borrowsResponse = await fetch(`${API_BASE_URL}/api/borrow/my-books?status=borrowed`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader(),
+            },
+          });
+          
+          const borrowsContentType = borrowsResponse.headers.get("content-type");
+          if (borrowsContentType && borrowsContentType.includes("application/json")) {
+            const borrowsData = await borrowsResponse.json();
+            
+            if (borrowsResponse.ok) {
+              setMyBorrows(borrowsData.borrows || []);
+            }
+          }
+        } catch (borrowError) {
+          console.error('Error fetching borrowed books:', borrowError);
+          // Don't fail the entire page if borrowed books can't be loaded
         }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      setError('Failed to load dashboard data');
+      setError('Failed to load dashboard data. Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +82,7 @@ const DashboardPage = () => {
 
   const handleBorrowBook = async (bookId) => {
     try {
-      const response = await fetch('/api/borrow', {
+      const response = await fetch(`${API_BASE_URL}/api/borrow`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,6 +90,11 @@ const DashboardPage = () => {
         },
         body: JSON.stringify({ bookId }),
       });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error('Server returned non-JSON response');
+      }
 
       const data = await response.json();
 
@@ -70,13 +106,13 @@ const DashboardPage = () => {
       }
     } catch (error) {
       console.error('Error borrowing book:', error);
-      alert('Failed to borrow book');
+      alert('Failed to borrow book. Please try again.');
     }
   };
 
   const handleReturnBook = async (borrowId) => {
     try {
-      const response = await fetch('/api/borrow/return', {
+      const response = await fetch(`${API_BASE_URL}/api/borrow/return`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,6 +120,11 @@ const DashboardPage = () => {
         },
         body: JSON.stringify({ borrowId }),
       });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error('Server returned non-JSON response');
+      }
 
       const data = await response.json();
 
@@ -95,7 +136,7 @@ const DashboardPage = () => {
       }
     } catch (error) {
       console.error('Error returning book:', error);
-      alert('Failed to return book');
+      alert('Failed to return book. Please try again.');
     }
   };
 
@@ -133,6 +174,13 @@ const DashboardPage = () => {
       {error && (
         <div className="error-message">
           {error}
+          <button 
+            onClick={fetchData} 
+            className="retry-button"
+            style={{ marginLeft: '10px', padding: '5px 10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            Retry
+          </button>
         </div>
       )}
 

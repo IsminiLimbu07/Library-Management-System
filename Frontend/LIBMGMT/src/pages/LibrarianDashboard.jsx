@@ -28,7 +28,7 @@ const LibrarianDashboard = () => {
       // Fetch books and borrow records in parallel
       const [booksResponse, borrowsResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/books`),
-        fetch('/api/borrow/all', {
+        fetch(`${API_BASE_URL}/api/borrow/all`, {
           headers: getAuthHeader()
         })
       ]);
@@ -61,7 +61,7 @@ const LibrarianDashboard = () => {
     }
 
     try {
-      const response = await fetch(`/api/books/${bookId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
         method: 'DELETE',
         headers: getAuthHeader(),
       });

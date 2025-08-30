@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { API_BASE_URL } from '../lib/api';
+import { fetchBooks, fetchBorrowRecords, deleteBook as deleteBookAPI } from '../lib/api';
 
 const LibrarianDashboard = () => {
   const [books, setBooks] = useState([]);
@@ -24,32 +24,42 @@ const LibrarianDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(''); // Clear previous errors
       
-      // Fetch books and borrow records in parallel
-      const [booksResponse, borrowsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/books`),
-        fetch(`${API_BASE_URL}/api/borrow/all`, {
-          headers: getAuthHeader()
-        })
-      ]);
-
-      const booksData = await booksResponse.json();
-      const borrowsData = await borrowsResponse.json();
-
-      if (booksResponse.ok) {
+      console.log('Fetching dashboard data...'); // Debug log
+      
+      // Test API connection first
+      const authHeaders = getAuthHeader();
+      console.log('Auth headers:', authHeaders); // Debug log
+      
+      // Fetch books first (public endpoint)
+      try {
+        const booksData = await fetchBooks();
+        console.log('Books data received:', booksData); // Debug log
         setBooks(booksData.books || []);
+      } catch (booksError) {
+        console.error('Books fetch error:', booksError);
+        setError(`Failed to load books: ${booksError.message}`);
+        return; // Don't continue if books fail
       }
       
-      if (borrowsResponse.ok) {
+      // Fetch borrow records (protected endpoint)
+      try {
+        const borrowsData = await fetchBorrowRecords(authHeaders);
+        console.log('Borrows data received:', borrowsData); // Debug log
         setBorrowRecords(borrowsData.borrows || []);
+      } catch (borrowsError) {
+        console.error('Borrows fetch error:', borrowsError);
+        // Don't fail the entire page for borrow records
+        setBorrowRecords([]);
+        if (borrowsError.message.includes('401') || borrowsError.message.includes('403')) {
+          setError('Authentication error. Please log in again.');
+        }
       }
 
-      if (!booksResponse.ok && !borrowsResponse.ok) {
-        setError('Failed to load dashboard data');
-      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      setError('Network error. Please try again.');
+      setError(`Network error: ${error.message}. Please check your internet connection and try again.`);
     } finally {
       setLoading(false);
     }
@@ -61,21 +71,12 @@ const LibrarianDashboard = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
-        method: 'DELETE',
-        headers: getAuthHeader(),
-      });
-
-      if (response.ok) {
-        alert('Book deleted successfully!');
-        fetchDashboardData(); // Refresh data
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to delete book');
-      }
+      await deleteBookAPI(bookId, getAuthHeader());
+      alert('Book deleted successfully!');
+      fetchDashboardData(); // Refresh data
     } catch (error) {
       console.error('Error deleting book:', error);
-      alert('Failed to delete book');
+      alert(`Failed to delete book: ${error.message}`);
     }
   };
 
@@ -143,6 +144,21 @@ const LibrarianDashboard = () => {
       {error && (
         <div className="error-message">
           {error}
+          <button 
+            onClick={fetchDashboardData} 
+            className="retry-button"
+            style={{ 
+              marginLeft: '10px', 
+              padding: '5px 10px', 
+              backgroundColor: '#007bff', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -463,6 +479,25 @@ const LibrarianDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Debug Information (remove in production) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '10px', 
+          right: '10px', 
+          background: '#000', 
+          color: '#fff', 
+          padding: '10px', 
+          fontSize: '12px',
+          borderRadius: '4px',
+          maxWidth: '300px'
+        }}>
+          <div>Books: {books.length}</div>
+          <div>Borrow Records: {borrowRecords.length}</div>
+          <div>API URL: {import.meta.env.VITE_API_URL}</div>
+        </div>
+      )}
     </div>
   );
 };

@@ -44,13 +44,14 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-
+// ============================================
+// PROXY TRUST CONFIGURATION (FIX FOR RENDER)
 // ============================================
 // CRITICAL: This must be set BEFORE any middleware
-app.set('trust proxy', true);
+app.set('trust proxy', 1); // Trust only the first proxy (Render's load balancer)
 
 // ============================================
-// MIDDLEWARE SETUP 
+// MIDDLEWARE SETUP (Similar to teacher's style)
 // ============================================
 
 // Security middleware
@@ -80,13 +81,15 @@ app.use(express.urlencoded({ extended: true }));
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per 15 minutes
-  trustProxy: true, // CRITICAL: Add this for Render
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
 
 // ============================================
-// ROUTES 
+// ROUTES (Simple and clear like teacher's code)
+// ============================================
 
 // FIXED: Public health check route (no authentication required)
 app.get('/', (req, res) => {
@@ -106,13 +109,13 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Authentication Routes 
+// Authentication Routes (similar to teacher's /auth route)
 app.post('/api/auth/register', registerUser);          // Register new user
 app.post('/api/auth/login', loginUser);                // Login user
 app.get('/api/auth/me', authenticateToken, getUserProfile);              // Get user profile
 app.put('/api/auth/profile', authenticateToken, updateUserProfile);      // Update user profile
 
-// Book Management Routes 
+// Book Management Routes (similar to teacher's /employee routes)
 app.post('/api/books', authenticateToken, authorize('librarian'), createBook);     // Create new book (librarian only)
 app.get('/api/books', getBooks);                                                   // Get all books (public)
 app.get('/api/books/:id', getBook);                                               // Get book by ID (public)
@@ -126,13 +129,13 @@ app.get('/api/borrow/my-books', authenticateToken, getMyBorrows);               
 app.get('/api/borrow/all', authenticateToken, librarianOnly, getAllBorrows);      // Get all borrow records (librarian only)
 app.get('/api/borrow/stats', authenticateToken, librarianOnly, getBorrowStats);   // Get borrow statistics (librarian only)
 
-// Route to verify Token 
+// Route to verify Token (exactly like teacher's style)
 app.get('/api/verify-token', authenticateToken, (req, res) => {
   res.status(200).json({ message: "Token verified successfully!" });
 });
 
 // ============================================
-// ERROR HANDLING 
+// ERROR HANDLING (Simple like teacher's code)
 // ============================================
 
 // Handle 404 routes - when route is not found
@@ -168,7 +171,7 @@ app.use((error, req, res, next) => {
 });
 
 // ============================================
-// SERVER STARTUP 
+// SERVER STARTUP (Exactly like teacher's style)
 // ============================================
 
 // Starting the server (simple approach like teacher's code)

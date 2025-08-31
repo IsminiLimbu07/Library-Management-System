@@ -23,7 +23,8 @@ const login = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", formData);
+      // Use your deployed backend URL
+      const response = await axios.post("https://library-management-system-7evp.onrender.com/api/auth/login", formData);
       
       if (response.status === 200) {
         const data = response.data;

@@ -19,7 +19,8 @@ export default function Index() {
         }
 
         // Verify token with your backend's /api/auth/me endpoint
-        const response = await axios.get("http://localhost:5000/api/auth/me", {
+        // Use your deployed backend URL
+        const response = await axios.get("https://library-management-system-7evp.onrender.com/api/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
